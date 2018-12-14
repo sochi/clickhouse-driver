@@ -2,9 +2,9 @@
 Supported types
 ===============
 
-Following ClickHouse types are supported by clickhouse-driver.
-Each ClickHouse type is mapped into corresponding Python type during executing SELECT query.
-Several Python types are mapped into ClickHouse column during executing INSERT query.
+Each ClickHouse type is deserialized to a corresponding Python type when SELECT queries are prepared.
+When serializing INSERT queries, clickhouse-driver accepts a broader range of Python types.
+The following ClickHouse types are supported by clickhouse-driver:
 
 
 [U]Int8/16/32/64
@@ -34,16 +34,16 @@ SELECT type: :class:`~datetime.date`.
 DateTime('timezone')
 --------------------
 
-*Timezone support new in version 0.0.11.*
+*Timezone support is new in version 0.0.11.*
 
 INSERT types: :class:`~datetime.datetime`, :class:`int`, :class:`long`.
 
-Int is interpreted as seconds without timezone. Integers can be used when
-insertion of datetime column is bottleneck.
+Integers are interpreted as seconds without timezone (UNIX timestamps). Integers can be used when
+insertion of datetime column is a bottleneck.
 
 SELECT type: :class:`~datetime.datetime`.
 
-Setting `use_client_time_zone <https://clickhouse.yandex/docs/ru/single/#datetime>`_ is taken into consideration.
+Setting `use_client_time_zone <https://clickhouse.yandex/docs/en/single/#datetime>`_ is taken into consideration.
 
 
 String/FixedString(N)
@@ -55,7 +55,7 @@ SELECT type: :class:`str`/:func:`basestring <basestring>`, :class:`bytes`. See n
 
 String column is encoded/decoded using UTF-8 encoding.
 
-Strings column can be returned without decoding. Return values are `bytes`:
+String column can be returned without decoding. Return values are `bytes`:
 
     .. code-block:: python
 
@@ -66,13 +66,13 @@ Strings column can be returned without decoding. Return values are `bytes`:
         ... )
 
 
-If column has FixedString type after select it may contain trailing zeroes
-according to ClickHouse storage format. Trailing zeroes are stripped by driver for convenience.
+If a column has FixedString type, upon returning from SELECT it may contain trailing zeroes
+in accordance with ClickHouse's storage format. Trailing zeroes are stripped by driver for convenience.
 
-During SELECT If string cannot be decoded with UTF-8 encoding it will return as :class:`bytes`.
+During SELECT, if a string cannot be decoded with UTF-8 encoding, it will return as :class:`bytes`.
 
-During INSERT if ``strings_as_bytes`` setting is not specified and string cannot be encoded with ``UTF-8``
-``UnicodeEncodeError`` will be raised.
+During INSERT, if ``strings_as_bytes`` setting is not specified and string cannot be encoded with ``UTF-8``,
+a ``UnicodeEncodeError`` will be raised.
 
 
 Enum8/16
@@ -106,10 +106,10 @@ SELECT type: :class:`str`/:func:`basestring <basestring>`.
         >>> client.execute('SELECT * FROM test')
         [(u'foo',), (u'bar',), (u'foo',)]
 
-For Python 2.7 `enum34 <https://pypi.org/project/enum34>`_ package is used.
+For Python 2.7, `enum34 <https://pypi.org/project/enum34>`_ package is used.
 
-Currently clickhouse-driver can't handle empty enum value by Python's `Enum` class nature.
-Enum's member name must be not empty. See `issue`_ and  `workaround`_.
+Currently clickhouse-driver can't handle empty enum value due to Python's `Enum` mechanics.
+Enum member name must be not empty. See `issue`_ and  `workaround`_.
 
 .. _issue: https://github.com/mymarilyn/clickhouse-driver/issues/48
 .. _workaround: https://github.com/mymarilyn/clickhouse-driver/issues/48#issuecomment-412480613

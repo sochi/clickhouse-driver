@@ -11,22 +11,23 @@ A minimal working example looks like this:
 
     .. code-block:: python
 
-        from clickhouse_driver import Client
-
-        client = Client('localhost')
-
-        print(client.execute('SHOW TABLES'))
+        >>> from clickhouse_driver import Client
+        >>>
+        >>> client = Client(host='localhost')
+        >>>
+        >>> print(client.execute('SHOW DATABASES'))
+        [('default',)]
 
 
 This code will show all tables from ``'default'`` database.
 
 There are two conceptual types of queries:
 
-- Queries that do not transfer data: SELECT, SHOW, etc.
-- Queries that transfer data: INSERT.
+- Read only queries: SELECT, SHOW, etc.
+- Read and write queries: INSERT.
 
 
-Every query should be executed by calling one of client's execute
+Every query should be executed by calling one of the client's execute
 methods: `execute`, `execute_with_progress`, `execute_iter method`.
 
 
@@ -54,10 +55,10 @@ Of course queries can and should be parameterized to avoid SQL injections:
 
 .. _execute-with-progress:
 
-Selecting data with progress information
-----------------------------------------
+Selecting data with progress statistics
+---------------------------------------
 
-You can get query progress information by using `execute_with_progress`. It can be useful for canceling long queries.
+You can get query progress statistics by using `execute_with_progress`. It can be useful for cancelling long queries.
 
     .. code-block:: python
 
@@ -100,15 +101,15 @@ Inserting data
 --------------
 
 Insert queries in `Native protocol <https://clickhouse.yandex/docs/en/single/index.html#native-interface-tcp>`_
-are a little bit tricky because of ClickHouse columnar nature. And because we're using Python.
+are a little bit tricky because of ClickHouse's columnar nature. And because we're using Python.
 
-INSERT query is consist of two parts: query and query data. Query data is split into chunks that called blocks.
+INSERT query consists of two parts: query statement and query values. Query values are split into chunks called blocks.
 Each block is sent in binary columnar form.
 
-As data in each block in send in binary form we should not serialize into string by
+As data in each block is sent in binary we should not serialize into string by
 using substitution ``%(a)s`` and then deserialize it back into Python types.
 
-This INSERT  will be completely inefficient when thousands rows are passed:
+This INSERT would be extremely slow if executed with thousands rows of data:
 
     .. code-block:: python
 
@@ -118,7 +119,7 @@ This INSERT  will be completely inefficient when thousands rows are passed:
         )
 
 
-For inserting data must you specify insert query that ends with `VALUES` clause. Data must be specified separately.
+To insert data efficiently, provide data separately, and end your statement with a `VALUES` clause:
 
     .. code-block:: python
 
@@ -135,15 +136,15 @@ For inserting data must you specify insert query that ends with `VALUES` clause.
         ...     ((x, ) for x in range(5))
         ... )
 
-Data for insert can be list/tuple/generator of lists/tuples/dicts.
+You can use any iterable yielding lists, tuples or dicts.
 
-If data is not passed client will hang with further timeout.
+If data is not passed, connection will be terminated after a timeout.
 
     .. code-block:: python
 
         client.execute('INSERT INTO test (x) VALUES')  # will hang
 
-Following example WILL NOT work:
+The following WILL NOT work:
 
     .. code-block:: python
 
@@ -153,7 +154,7 @@ Following example WILL NOT work:
         ... )
 
 
-Of course `INSERT ... SELECT` query will work without any data:
+Of course for `INSERT ... SELECT` queries data is not needed:
 
     .. code-block:: python
 
@@ -164,12 +165,12 @@ Of course `INSERT ... SELECT` query will work without any data:
         ... )
         []
 
-For ClickHouse server this query like usual `SELECT` query.
+ClickHouse will execute this query like a usual `SELECT` query.
 
 DDL
 ---
 
-DDL queries can be executed in the same way SELECT queries are executed
+DDL queries can be executed in the same way SELECT queries are executed:
 
     .. code-block:: python
 
